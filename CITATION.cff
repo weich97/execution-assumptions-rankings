@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the paper."
+type: software
+title: "How Execution Assumptions Change Short-Horizon Sharpe Rankings: Evidence from a Synthetic Trading Benchmark"
+authors:
+  - family-names: Xue
+    given-names: Weicheng
+    affiliation: Virginia Tech
+repository-code: "https://github.com/weich97/execution-assumptions-rankings"
+license: MIT
+version: 1.0.0
+date-released: 2026-10-02
