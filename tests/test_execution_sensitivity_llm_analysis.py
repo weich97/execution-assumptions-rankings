@@ -116,9 +116,28 @@ def test_sampling_variance_decomposition_with_repeated_samples(tmp_path: Path):
     assert record["agent"] == "poe:model-a"
     assert record["seed_count"] == 2
     assert record["total_runs"] == 6
+    assert record["repeated_seed_count"] == 2
+    assert record["min_samples_per_seed"] == record["max_samples_per_seed"] == 3
+    assert record["summary_eligible"] is True
     # Between-seed variance (means 0.10 vs 0.20 -> 0.005) dominates the
     # within-seed sampling variance (1e-4): share is small.
     assert 0.0 < float(record["within_seed_share"]) < 0.05
+
+
+def test_sparse_sampling_cell_is_retained_but_not_in_main_summary():
+    module = _load_module()
+    rows = [
+        _row("calm", "E1_default_stress", "poe:model-a", 1, -1.0, sample=0),
+        _row("calm", "E1_default_stress", "poe:model-a", 1, 1.0, sample=1),
+        _row("calm", "E1_default_stress", "poe:model-a", 2, 2.0),
+        _row("calm", "E1_default_stress", "poe:model-a", 3, 4.0),
+    ]
+    record = module.sampling_variance_rows(rows)[0]
+    assert record["repeated_seed_count"] == 1
+    assert record["min_samples_per_seed"] == 1
+    assert record["max_samples_per_seed"] == 2
+    assert record["summary_eligible"] is False
+    assert float(record["within_seed_share"]) == pytest.approx(6.0 / 13.0)
 
 
 def test_did_averages_repeated_samples_within_seed(tmp_path: Path):

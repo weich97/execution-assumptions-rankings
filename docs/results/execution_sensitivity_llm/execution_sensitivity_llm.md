@@ -34,30 +34,36 @@ baseline anchor does on the same market paths.
 
 ## Provider-Sampling Variance Decomposition
 
-Within-seed share is the fraction of total-return variance due to
-provider sampling at a fixed market path; the remainder is market
-variation across seeds.
+These are descriptive variance-component estimates under independent
+sampling errors with a common within-seed variance. Let W be the
+mean sample variance across seeds with repeats and V the sample
+variance of all seed means. For S seeds with n_s samples each,
+B = max(0, V - W * sum(1/n_s)/S) and share = W/(B+W).
+Singleton seeds enter the sampling correction but cannot estimate W.
+Truncation and sparse repeat coverage make the ratio uncertain;
+the share is not an identified causal contribution of sampling.
+The main summary includes only fully repeated, balanced cells.
 
-| Scenario | Level | Agent | Seeds | Runs | Within-seed share |
-| --- | --- | --- | ---: | ---: | ---: |
-| calm | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 0.526 |
-| calm | E0_ideal | poe:claude-opus-4.7 | 10 | 30 | 0.002 |
-| calm | E0_ideal | poe:gemini-3.1-pro | 10 | 30 | 0.451 |
-| calm | E0_ideal | poe:glm-5 | 10 | 30 | 0.122 |
-| calm | E0_ideal | poe:gpt-5.5 | 10 | 30 | 0.000 |
-| calm | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 0.358 |
-| calm | E1_default_stress | poe:claude-opus-4.7 | 10 | 19 | 0.019 |
-| calm | E1_default_stress | poe:gemini-3.1-pro | 10 | 21 | 0.030 |
-| calm | E1_default_stress | poe:glm-5 | 10 | 11 | 0.562 |
-| calm | E1_default_stress | poe:gpt-5.5 | 10 | 30 | 0.003 |
-| calm | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 0.200 |
-| calm | E2_harsh_corner | poe:gpt-5.5 | 10 | 11 | 0.000 |
-| high_vol | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 0.149 |
-| high_vol | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 0.143 |
-| high_vol | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 0.027 |
-| jump_tail | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 0.347 |
-| jump_tail | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 0.087 |
-| jump_tail | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 0.025 |
+| Scenario | Level | Agent | Seeds | Runs | Repeated seeds | Min/max samples | In main summary | Within-seed share |
+| --- | --- | --- | ---: | ---: | ---: | --- | --- | ---: |
+| calm | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.526 |
+| calm | E0_ideal | poe:claude-opus-4.7 | 10 | 30 | 10 | 3/3 | True | 0.002 |
+| calm | E0_ideal | poe:gemini-3.1-pro | 10 | 30 | 10 | 3/3 | True | 0.451 |
+| calm | E0_ideal | poe:glm-5 | 10 | 30 | 10 | 3/3 | True | 0.122 |
+| calm | E0_ideal | poe:gpt-5.5 | 10 | 30 | 10 | 3/3 | True | 0.000 |
+| calm | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.358 |
+| calm | E1_default_stress | poe:claude-opus-4.7 | 10 | 19 | 5 | 1/3 | False | 0.019 |
+| calm | E1_default_stress | poe:gemini-3.1-pro | 10 | 21 | 6 | 1/3 | False | 0.030 |
+| calm | E1_default_stress | poe:glm-5 | 10 | 11 | 1 | 1/2 | False | 0.753 |
+| calm | E1_default_stress | poe:gpt-5.5 | 10 | 30 | 10 | 3/3 | True | 0.003 |
+| calm | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.200 |
+| calm | E2_harsh_corner | poe:gpt-5.5 | 10 | 11 | 1 | 1/2 | False | 0.000 |
+| high_vol | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.149 |
+| high_vol | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.143 |
+| high_vol | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.027 |
+| jump_tail | E0_ideal | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.347 |
+| jump_tail | E1_default_stress | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.087 |
+| jump_tail | E2_harsh_corner | deepseek:deepseek-v4-pro | 10 | 30 | 10 | 3/3 | True | 0.025 |
 
 ## Ranking Stability Between Levels
 

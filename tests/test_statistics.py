@@ -167,6 +167,27 @@ def test_variance_components_separates_between_and_within():
     assert 0.0 < float(components["within_group_share"]) < 1.0
 
 
+def test_variance_components_includes_singletons_in_sampling_correction():
+    components = variance_components({"a": [-1.0, 1.0], "b": [2.0], "c": [4.0]})
+    # Group means have sample variance 4; within variance is 2.
+    # mean(1/n) = (1/2 + 1 + 1)/3 = 5/6, not 1/2.
+    assert abs(float(components["between_group_variance"]) - 7.0 / 3.0) < 1e-12
+    assert abs(float(components["within_group_share"]) - 6.0 / 13.0) < 1e-12
+
+
+def test_variance_components_unequal_repeated_group_sizes():
+    components = variance_components({"a": [-1.0, 1.0], "b": [5.0, 6.0, 7.0]})
+    # within = (2 + 1)/2; mean(1/n) = (1/2 + 1/3)/2.
+    assert abs(float(components["between_group_variance"]) - 17.375) < 1e-12
+    assert abs(float(components["within_group_share"]) - 12.0 / 151.0) < 1e-12
+
+
+def test_variance_components_truncates_negative_between_estimate():
+    components = variance_components({"a": [-1.0, 1.0], "b": [-1.0, 1.0]})
+    assert components["between_group_variance"] == 0.0
+    assert components["within_group_share"] == 1.0
+
+
 def test_variance_components_single_samples_have_no_within():
     components = variance_components({"seed_7": [0.1], "seed_11": [0.2]})
 

@@ -20,6 +20,12 @@ python verify_artifact.py
 python -m pytest
 ```
 
+To recompute saved analyses and figures without running new simulator cases:
+
+```text
+python verify_artifact.py --analysis-only
+```
+
 `verify_artifact.py` checks every file against `SHA256SUMS`, recomputes the
 main analysis tables from `merged_runs.csv`, rebuilds the Figure 2 intervals,
 the Figure 2 table and both figures in a temporary directory, and reruns a set
@@ -59,16 +65,24 @@ All result folders are under `docs/results/`; all scripts are under `scripts/`.
   Seeds are given per scenario; the script adds the scenario offset itself.
 - **LLM rows** need provider access (`DEEPSEEK_API_KEY` for the direct model,
   `POE_API_KEY` for the routed aliases). Four of the five LLM policies used
-  provider-routed aliases that are not tied to fixed model versions, so a fresh
+  provider-routed aliases. The direct API identifier is also undated and does
+  not pin an immutable backend, so a fresh
   collection will not reproduce the recorded responses byte for byte. Raw
   provider responses and per-step trajectories are not included.
 - **Real-price check.** Yahoo Finance data are not redistributed. Download daily
   OHLCV files with `scripts/download_yahoo_daily.py`, then pass the folder and
   symbols to `run_execution_sensitivity_real.py`.
 
-`sampling_variance.csv` uses the corrected between-seed variance estimator,
-which subtracts the within-seed sampling term from the variance of seed means.
-The values reported in the paper come from this table.
+`sampling_variance.csv` includes repeat coverage for every reported cell.
+Under independent errors with a common within-seed variance, let W be the mean
+sample variance of seeds with repeats, V the sample variance of all seed means,
+and n_s the sample count for seed s. The estimate is
+B = max(0, V - W * mean(1/n_s)), including singleton seeds in the correction;
+the estimated share is W/(B+W). Truncation and sparse repeat coverage make this
+ratio uncertain. The paper summarizes only the 14 balanced cells with three
+samples at each of ten seeds (`summary_eligible=True`). Four uneven cells are
+retained for inspection, including two with only one repeated seed. This is a
+descriptive decomposition, not an identified causal contribution of sampling.
 
 ## License
 

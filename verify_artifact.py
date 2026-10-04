@@ -11,6 +11,7 @@ No network access or API key is used. Released files are never modified.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import os
@@ -21,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 LLM = ROOT / "docs/results/execution_sensitivity_llm"
-TABLES = ("merged_aggregate.csv", "rank_stability.csv", "fragility_did.csv", "sampling_variance.csv")
+TABLES = ("merged_aggregate.csv", "rank_stability.csv", "fragility_did.csv", "sampling_variance.csv",
+          "execution_sensitivity_llm.md")
 RERUN_AGENTS = "buy-and-hold,risk-parity,naive-momentum,mean-reversion"
 RERUN_LEVELS = "E0_ideal,E1_default_stress,E2_harsh_corner"
 
@@ -64,7 +66,7 @@ def check_tables(tmp: Path) -> None:
     for name in TABLES:
         if not same_text(out / name, LLM / name):
             raise SystemExit(f"recomputed table differs: {name}")
-    print(f"PASS {len(TABLES)} analysis tables recomputed from merged_runs.csv")
+    print(f"PASS {len(TABLES) - 1} analysis tables and report recomputed from merged_runs.csv")
 
 
 def check_tau_cis(tmp: Path) -> None:
@@ -109,13 +111,19 @@ def check_rerun(tmp: Path) -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--analysis-only", action="store_true",
+                        help="Recompute saved results and figures without running simulator cases.")
+    args = parser.parse_args()
     check_manifest()
     with tempfile.TemporaryDirectory() as tmp:
         check_tables(Path(tmp))
         check_tau_cis(Path(tmp))
         check_figures(Path(tmp))
-        check_rerun(Path(tmp))
-    print("All checks passed.")
+        if not args.analysis_only:
+            check_rerun(Path(tmp))
+    print("Analysis checks passed; simulator rerun skipped (--analysis-only)."
+          if args.analysis_only else "All checks passed.")
     return 0
 
 

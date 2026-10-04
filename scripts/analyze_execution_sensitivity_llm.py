@@ -175,7 +175,7 @@ def aggregate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         output.append(record)
     cells: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for record in output:
-        cells.setdefault((record["scenario"], record["level"]), []).append(record)
+        cells.setdefault((str(record["scenario"]), str(record["level"])), []).append(record)
     for records in cells.values():
         records.sort(key=lambda item: -float(item[f"{RANK_METRIC}_mean"]))
         for position, record in enumerate(records, start=1):
@@ -277,8 +277,9 @@ def sampling_variance_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Between-seed (market path) vs within-seed (provider sampling) variance.
 
     Only cells where at least one seed carries repeated provider samples are
-    reported; deterministic agents never qualify. A small within-seed share
-    means conclusions ride on market variation, not provider stochasticity.
+    reported; deterministic agents never qualify. All qualifying cells are
+    retained with repeat-coverage diagnostics. The paper's descriptive summary
+    uses only cells with the same number of repeats at every seed.
     """
 
     grouped: dict[tuple[str, str, str], dict[int, list[float]]] = {}
@@ -293,6 +294,7 @@ def sampling_variance_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not any(len(values) >= 2 for values in by_seed.values()):
             continue
         components = variance_components(by_seed)
+        sizes = [len(values) for values in by_seed.values()]
         output.append(
             {
                 "scenario": scenario,
@@ -301,6 +303,10 @@ def sampling_variance_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "metric": "total_return",
                 "seed_count": components["group_count"],
                 "total_runs": components["total_n"],
+                "repeated_seed_count": sum(size >= 2 for size in sizes),
+                "min_samples_per_seed": min(sizes),
+                "max_samples_per_seed": max(sizes),
+                "summary_eligible": len(sizes) >= 2 and min(sizes) >= 2 and len(set(sizes)) == 1,
                 "between_seed_variance": components["between_group_variance"],
                 "within_seed_variance": components["within_group_variance"],
                 "within_seed_share": components["within_group_share"],
@@ -401,6 +407,10 @@ def main(argv: list[str] | None = None) -> int:
                 "metric",
                 "seed_count",
                 "total_runs",
+                "repeated_seed_count",
+                "min_samples_per_seed",
+                "max_samples_per_seed",
+                "summary_eligible",
                 "between_seed_variance",
                 "within_seed_variance",
                 "within_seed_share",
@@ -468,19 +478,27 @@ def _write_markdown(
             "",
             "## Provider-Sampling Variance Decomposition",
             "",
-            "Within-seed share is the fraction of total-return variance due to",
-            "provider sampling at a fixed market path; the remainder is market",
-            "variation across seeds.",
+            "These are descriptive variance-component estimates under independent",
+            "sampling errors with a common within-seed variance. Let W be the",
+            "mean sample variance across seeds with repeats and V the sample",
+            "variance of all seed means. For S seeds with n_s samples each,",
+            "B = max(0, V - W * sum(1/n_s)/S) and share = W/(B+W).",
+            "Singleton seeds enter the sampling correction but cannot estimate W.",
+            "Truncation and sparse repeat coverage make the ratio uncertain;",
+            "the share is not an identified causal contribution of sampling.",
+            "The main summary includes only fully repeated, balanced cells.",
             "",
-            "| Scenario | Level | Agent | Seeds | Runs | Within-seed share |",
-            "| --- | --- | --- | ---: | ---: | ---: |",
+            "| Scenario | Level | Agent | Seeds | Runs | Repeated seeds | Min/max samples | In main summary | Within-seed share |",
+            "| --- | --- | --- | ---: | ---: | ---: | --- | --- | ---: |",
         ]
         for row in sampling_variance:
             share = row["within_seed_share"]
             share_text = f"{float(share):.3f}" if share is not None else ""
             lines.append(
                 f"| {row['scenario']} | {row['level']} | {row['agent']} "
-                f"| {row['seed_count']} | {row['total_runs']} | {share_text} |"
+                f"| {row['seed_count']} | {row['total_runs']} | {row['repeated_seed_count']} "
+                f"| {row['min_samples_per_seed']}/{row['max_samples_per_seed']} "
+                f"| {row['summary_eligible']} | {share_text} |"
             )
     lines += [
         "",
